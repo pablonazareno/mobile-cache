@@ -2,6 +2,7 @@
 var HashRing = require('hashring');
 var redis = require('redis');
 var logger = require('winston');
+var jsdog = require("jsdog-meli").configure();
 
 module.exports = function MeliCache(options) {
 	var self = {};
@@ -15,31 +16,45 @@ module.exports = function MeliCache(options) {
 
 	var servers = {};
 	for (var key in clients) {
-		servers[key] = 1; // balanced ring for now
+		servers[key] = 1;
 	}
 	self.ring = new HashRing(servers);
 
 	self.get = function(key, callback) {
+		var start = new Date();
 		var node = self.ring.get(key);
 		var client = clients[node];
-		logger.debug("CACHE: getting key %s from server %s.",key,client.stream.host)
-		client.get(key, callback);
+		logger.debug("CACHE: getting key %s from server %s.", key, client.stream.host)
+		client.get(key, function(error, value) {
+			var total = new Date() - start;
+			if (error) {
+				jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ['result:fail', 'method:get', 'db:redis']);
+			} else {
+				jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ['result:success', 'method:get', 'db:redis']);
+			}
+			callback(error, JSON.parse(value));
+		});
 	};
 
 	self.set = function(key, value, ttl, callback) {
+		var start = new Date();
 		var node = self.ring.get(key);
 		var client = clients[node];
-		logger.debug("CACHE: setting key %s in server %s.",key,client.stream.host)
+		logger.debug("CACHE: setting key %s in server %s.", key, client.stream.host)
 		client.set(key, value, function(error) {
+			var total = new Date() - start;
 			if (typeof ttl === 'function') {
 				callback = ttl;
 			}
 			if (error) {
+				jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ['result:fail', 'method:set', 'db:redis']);
 				callback(error);
 			} else {
 				if (typeof ttl != 'function') {
+					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ['result:success', 'method:set', 'db:redis']);
 					client.expire(key, ttl, callback);
 				} else {
+					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ['result:success', 'method:set', 'db:redis']);
 					callback();
 				}
 			}
