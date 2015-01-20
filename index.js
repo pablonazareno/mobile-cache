@@ -41,7 +41,7 @@ module.exports = function MeliCache(options) {
 		var node = self.ring.get(key);
 		var client = clients[node];
 		logger.debug("CACHE: setting key %s in server %s.", key, client.stream.host)
-		client.set(key, value, function(error) {
+		client.set(key, JSON.stringify(value), function(error) {
 			var total = new Date() - start;
 			if (typeof ttl === 'function') {
 				callback = ttl;
