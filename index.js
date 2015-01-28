@@ -1,7 +1,10 @@
 "use strict";
 var HashRing = require("hashring");
 var redis = require("redis");
-var logger = require("winston");
+var bunyan = require("bunyan");
+var logger = bunyan.createLogger({
+	name: "meli-cache"
+});
 var jsdog = require("jsdog-meli").configure();
 
 module.exports = function MeliCache(options) {
@@ -33,6 +36,7 @@ module.exports = function MeliCache(options) {
 					callback(error);
 				} else {
 					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:get", "db:redis"]);
+					jsdog.recordCompoundMetric("application.mobile.api.cache.result", total, ["result:" + (value ? "hit" : "miss"), "method:get ", "db:redis"]);
 					callback(error, JSON.parse(value));
 				}
 			});
