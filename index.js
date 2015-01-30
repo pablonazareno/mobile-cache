@@ -1,6 +1,5 @@
 "use strict";
 var HashRing = require("hashring");
-var redis = require("redis");
 var bunyan = require("bunyan");
 var logger = bunyan.createLogger({
 	name: "meli-cache"
@@ -10,6 +9,11 @@ var jsdog = require("jsdog-meli").configure();
 module.exports = function MeliCache(options) {
 	var self = {};
 	var clients = {};
+	if (options.namespace) {
+		var patchRedis = require('cls-redis');
+		patchRedis(options.namespace);
+	}
+	var redis = require("redis");
 	options.servers.forEach(function(server) {
 		var fields = server.split(/:/);
 		var clientOptions = options.clientOptions || {};
@@ -37,7 +41,28 @@ module.exports = function MeliCache(options) {
 				} else {
 					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:get", "db:redis"]);
 					jsdog.recordCompoundMetric("application.mobile.api.cache.result", total, ["result:" + (value ? "hit" : "miss"), "method:get ", "db:redis"]);
-					callback(error, JSON.parse(value));
+					callback(undefined, JSON.parse(value));
+				}
+			});
+		} else {
+			callback("Cache Down.");
+		}
+	};
+
+	self.remove = function(key, callback) {
+		var start = new Date();
+		var node = self.ring.get(key);
+		var client = clients[node];
+		logger.debug("CACHE: removing key %s from server %j.", key, client.stream.address());
+		if (client.connected) {
+			client.del(key, function(error, value) {
+				var total = new Date() - start;
+				if (error) {
+					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:remove", "db:redis"]);
+					callback(error);
+				} else {
+					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:remove", "db:redis"]);
+					callback();
 				}
 			});
 		} else {
