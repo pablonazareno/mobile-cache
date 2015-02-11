@@ -14,6 +14,9 @@ module.exports = function MeliCache(options) {
 		patchRedis(options.namespace);
 	}
 	var redis = require("redis");
+	if (process.env.NODE_ENV==='test'){
+		redis = require('redis-mock');
+	}
 	options.servers.forEach(function(server) {
 		var fields = server.split(/:/);
 		var clientOptions = options.clientOptions || {};
@@ -31,7 +34,7 @@ module.exports = function MeliCache(options) {
 		var start = new Date();
 		var node = self.ring.get(key);
 		var client = clients[node];
-		logger.debug("CACHE: getting key %s from server %j.", key, client.stream.address());
+		logger.debug("CACHE: getting key %s from server %j.", key, client.stream ? client.stream.address() : "");
 		if (client.connected) {
 			client.get(key, function(error, value) {
 				var total = new Date() - start;
@@ -40,12 +43,12 @@ module.exports = function MeliCache(options) {
 					callback(error);
 				} else {
 					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:get", "db:redis"]);
-					jsdog.recordCompoundMetric("application.mobile.api.cache.result", total, ["result:" + (value ? "hit" : "miss"), "method:get ", "db:redis"]);
+					jsdog.recordCompoundMetric("application.mobile.api.cache.result", 1, ["result:" + (value ? "hit" : "miss"), "method:get ", "db:redis"]);
 					callback(undefined, JSON.parse(value));
 				}
 			});
 		} else {
-			callback("Cache Down.");
+			callback(new Error("Cache Down."));
 		}
 	};
 
@@ -53,7 +56,7 @@ module.exports = function MeliCache(options) {
 		var start = new Date();
 		var node = self.ring.get(key);
 		var client = clients[node];
-		logger.debug("CACHE: removing key %s from server %j.", key, client.stream.address());
+		logger.debug("CACHE: removing key %s from server %j.", key, client.stream ? client.stream.address() : "");
 		if (client.connected) {
 			client.del(key, function(error, value) {
 				var total = new Date() - start;
@@ -66,21 +69,21 @@ module.exports = function MeliCache(options) {
 				}
 			});
 		} else {
-			callback("Cache Down.");
+			callback(new Error("Cache Down."));
 		}
 	};
 
 	self.set = function(key, value, ttl, callback) {
 		var start = new Date();
+		if (typeof ttl === "function") {
+			callback = ttl;
+		}
 		var node = self.ring.get(key);
 		var client = clients[node];
-		logger.debug("CACHE: setting key %s in server %j.", key, client.stream.address());
+		logger.debug("CACHE: setting key %s in server %j.", key, client.stream ? client.stream.address() : "");
 		if (client.connected) {
 			client.set(key, JSON.stringify(value), function(error) {
 				var total = new Date() - start;
-				if (typeof ttl === "function") {
-					callback = ttl;
-				}
 				if (error) {
 					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:set", "db:redis"]);
 					callback(error);
@@ -95,7 +98,7 @@ module.exports = function MeliCache(options) {
 				}
 			});
 		} else {
-			callback("Cache Down.");
+			callback(new Error("Cache Down."));
 		}
 	};
 

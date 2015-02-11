@@ -1,6 +1,6 @@
 {
 	"name": "mobile-cache",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "Distributed cached sharded over redis. According Mobile team requisites.",
 	"scripts": {
 		"check": "./node_modules/david/bin/david.js --registry http://registry.npm.ml.com/"
@@ -12,7 +12,8 @@
 		"redis": "0.12.1",
 		"hashring": "3.1.0",
 		"jsdog-meli": "0.0.5",
-		"cls-redis": "1.0.3"
+		"cls-redis": "1.0.3",
+		"redis-mock": "0.4.0"
 	},
 	"devDependencies": {
 		"david": "6.1.3"
