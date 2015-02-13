@@ -9,12 +9,13 @@ var jsdog = require("jsdog-meli").configure();
 module.exports = function MeliCache(options) {
 	var self = {};
 	var clients = {};
+	var name = options.name ? options.name : 'default';
 	if (options.namespace) {
 		var patchRedis = require('cls-redis');
 		patchRedis(options.namespace);
 	}
 	var redis = require("redis");
-	if (process.env.NODE_ENV==='test'){
+	if (process.env.NODE_ENV === 'test') {
 		redis = require('redis-mock');
 	}
 	options.servers.forEach(function(server) {
@@ -34,16 +35,16 @@ module.exports = function MeliCache(options) {
 		var start = new Date();
 		var node = self.ring.get(key);
 		var client = clients[node];
-		logger.debug("CACHE: getting key %s from server %j.", key, client.stream ? client.stream.address() : "");
+		logger.debug("CACHE %s: getting key %s from server %j.", name, key, client.stream ? client.stream.address() : "");
 		if (client.connected) {
 			client.get(key, function(error, value) {
 				var total = new Date() - start;
 				if (error) {
-					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:get", "db:redis"]);
+					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:get", "cache:" + name]);
 					callback(error);
 				} else {
-					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:get", "db:redis"]);
-					jsdog.recordCompoundMetric("application.mobile.api.cache.result", 1, ["result:" + (value ? "hit" : "miss"), "method:get ", "db:redis"]);
+					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:get", "cache:" + name]);
+					jsdog.recordCompoundMetric("application.mobile.api.cache.result", 1, ["result:" + (value ? "hit" : "miss"), "method:get ", "cache:" + name]);
 					callback(undefined, JSON.parse(value));
 				}
 			});
@@ -56,15 +57,15 @@ module.exports = function MeliCache(options) {
 		var start = new Date();
 		var node = self.ring.get(key);
 		var client = clients[node];
-		logger.debug("CACHE: removing key %s from server %j.", key, client.stream ? client.stream.address() : "");
+		logger.debug("CACHE %s: removing key %s from server %j.", name, key, client.stream ? client.stream.address() : "");
 		if (client.connected) {
 			client.del(key, function(error, value) {
 				var total = new Date() - start;
 				if (error) {
-					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:remove", "db:redis"]);
+					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:remove", "cache:" + name]);
 					callback(error);
 				} else {
-					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:remove", "db:redis"]);
+					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:remove", "cache:" + name]);
 					callback();
 				}
 			});
@@ -80,19 +81,19 @@ module.exports = function MeliCache(options) {
 		}
 		var node = self.ring.get(key);
 		var client = clients[node];
-		logger.debug("CACHE: setting key %s in server %j.", key, client.stream ? client.stream.address() : "");
+		logger.debug("CACHE %s: setting key %s in server %j.", name, key, client.stream ? client.stream.address() : "");
 		if (client.connected) {
 			client.set(key, JSON.stringify(value), function(error) {
 				var total = new Date() - start;
 				if (error) {
-					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:set", "db:redis"]);
+					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:set", "cache:" + name]);
 					callback(error);
 				} else {
 					if (typeof ttl != "function") {
-						jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:set", "db:redis"]);
+						jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:set", "cache:" + name]);
 						client.expire(key, ttl, callback);
 					} else {
-						jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:set", "db:redis"]);
+						jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:set", "cache:" + name]);
 						callback();
 					}
 				}

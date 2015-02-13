@@ -24,6 +24,7 @@ cache.quit();
 ## Configure
 ```javascript
 {
+ name: 'cache name',
  namespace: 'This is the namespace object from CLS',
  servers: ['127.0.0.1:6380','127.0.0.1:6381'....],
  clientOptions: 'for redis configuration, see [node_redis](https://github.com/mranney/node_redis#overloading)'

@@ -1,6 +1,6 @@
 {
 	"name": "mobile-cache",
-	"version": "0.0.7",
+	"version": "0.0.8",
 	"description": "Distributed cached sharded over redis. According Mobile team requisites.",
 	"scripts": {
 		"check": "./node_modules/david/bin/david.js --registry http://registry.npm.ml.com/"
