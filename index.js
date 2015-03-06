@@ -35,16 +35,17 @@ module.exports = function MeliCache(options) {
 		var start = new Date();
 		var node = self.ring.get(key);
 		var client = clients[node];
-		logger.debug("CACHE %s: getting key %s from server %j.", name, key, client.stream ? client.stream.address() : "");
+		var server = client.stream ? client.stream.address() : "";
+		logger.debug("CACHE %s: getting key %s from server %j.", name, key, server);
 		if (client.connected) {
 			client.get(key, function(error, value) {
 				var total = new Date() - start;
 				if (error) {
-					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:get", "cache:" + name]);
+					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:get", "cache:" + name, "server:"+server]);
 					callback(error);
 				} else {
-					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:get", "cache:" + name]);
-					jsdog.recordCompoundMetric("application.mobile.api.cache.result", 1, ["result:" + (value ? "hit" : "miss"), "method:get ", "cache:" + name]);
+					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:get", "cache:" + name, "server:"+server]);
+					jsdog.recordCompoundMetric("application.mobile.api.cache.result", 1, ["result:" + (value ? "hit" : "miss"), "method:get ", "cache:" + name, "server:"+server);
 					callback(undefined, JSON.parse(value));
 				}
 			});
@@ -57,15 +58,16 @@ module.exports = function MeliCache(options) {
 		var start = new Date();
 		var node = self.ring.get(key);
 		var client = clients[node];
-		logger.debug("CACHE %s: removing key %s from server %j.", name, key, client.stream ? client.stream.address() : "");
+		var server = client.stream ? client.stream.address() : "";
+		logger.debug("CACHE %s: removing key %s from server %j.", name, key, server);
 		if (client.connected) {
 			client.del(key, function(error, value) {
 				var total = new Date() - start;
 				if (error) {
-					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:remove", "cache:" + name]);
+					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:remove", "cache:" + name, "server:"+server]);
 					callback(error);
 				} else {
-					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:remove", "cache:" + name]);
+					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:remove", "cache:" + name, "server:"+server]);
 					callback();
 				}
 			});
@@ -81,19 +83,20 @@ module.exports = function MeliCache(options) {
 		}
 		var node = self.ring.get(key);
 		var client = clients[node];
-		logger.debug("CACHE %s: setting key %s in server %j.", name, key, client.stream ? client.stream.address() : "");
+		var server = client.stream ? client.stream.address() : "";
+		logger.debug("CACHE %s: setting key %s in server %j.", name, key, server);
 		if (client.connected) {
 			client.set(key, JSON.stringify(value), function(error) {
 				var total = new Date() - start;
 				if (error) {
-					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:set", "cache:" + name]);
+					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:set", "cache:" + name, "server:"+server]);
 					callback(error);
 				} else {
 					if (typeof ttl != "function") {
-						jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:set", "cache:" + name]);
+						jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:set", "cache:" + name, "server:"+server]);
 						client.expire(key, ttl, callback);
 					} else {
-						jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:set", "cache:" + name]);
+						jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:set", "cache:" + name, "server:"+server]);
 						callback();
 					}
 				}
