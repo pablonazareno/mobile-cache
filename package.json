@@ -6,6 +6,11 @@
 		"check": "./node_modules/david/bin/david.js --registry http://registry.npm.ml.com/"
 	},
 	"author": "Pablo Lucadei",
+	"homepage": "https://github.com/pablonazareno/mobile-cache",
+    	"repository": {
+        	"type": "git",
+        	"url": "git://github.com/pablonazareno/mobile-cache.git"
+    	},
 	"license": "MIT",
 	"dependencies": {
 		"bunyan": "1.3.3",
