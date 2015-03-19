@@ -122,7 +122,7 @@ module.exports = function MeliCache(options) {
 	};
 
 	self.on("error", function(error) {
-		logger.warn("Cache Down");
+		logger.warn({err: error}, "Cache Down");
 	});
 	return self;
 };
