@@ -8,7 +8,7 @@ var logger = bunyan.createLogger({
 var jsdog;
 
 module.exports = function MeliCache(options) {
-    jsdog = require("jsdog-meli").configure();
+	jsdog = require("jsdog-meli").configure();
 	var self = {};
 	var clients = {};
 	var name = options.name ? options.name : 'default';
@@ -39,17 +39,18 @@ module.exports = function MeliCache(options) {
 		var client = clients[node];
 		var server = client.stream ? client.stream.address() : "";
 		logger.debug("CACHE %s: getting key %s from server %j.", name, key, server);
-        client.get(key, function(error, value) {
-            var total = new Date() - start;
-            if (error) {
-                jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:get", "cache:" + name, "server:"+server.address]);
-                callback(error);
-            } else {
-                jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:get", "cache:" + name, "server:"+server.address]);
-                jsdog.recordCompoundMetric("application.mobile.api.cache.result", 1, ["result:" + (value ? "hit" : "miss"), "method:get ", "cache:" + name, "server:"+server.address]);
-                callback(undefined, JSON.parse(value));
-            }
-        });
+		client.get(key, function(error, value) {
+			var total = new Date() - start;
+			var address = server && server.address;
+			if (error) {
+				jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:get", "cache:" + name, "server:" + address]);
+				callback(error);
+			} else {
+				jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:get", "cache:" + name, "server:" + address]);
+				jsdog.recordCompoundMetric("application.mobile.api.cache.result", 1, ["result:" + (value ? "hit" : "miss"), "method:get ", "cache:" + name, "server:" + address]);
+				callback(undefined, JSON.parse(value));
+			}
+		});
 	};
 
 	self.remove = function(key, callback) {
@@ -58,16 +59,17 @@ module.exports = function MeliCache(options) {
 		var client = clients[node];
 		var server = client.stream ? client.stream.address() : "";
 		logger.debug("CACHE %s: removing key %s from server %j.", name, key, server);
-        client.del(key, function(error, value) {
-            var total = new Date() - start;
-            if (error) {
-                jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:remove", "cache:" + name, "server:"+server.address]);
-                callback(error);
-            } else {
-                jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:remove", "cache:" + name, "server:"+server.address]);
-                callback();
-            }
-        });
+		client.del(key, function(error, value) {
+			var total = new Date() - start;
+			var address = server && server.address;
+			if (error) {
+				jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:remove", "cache:" + name, "server:" + address]);
+				callback(error);
+			} else {
+				jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:remove", "cache:" + name, "server:" + address]);
+				callback();
+			}
+		});
 	};
 
 	self.set = function(key, value, ttl, callback) {
@@ -79,26 +81,27 @@ module.exports = function MeliCache(options) {
 		var client = clients[node];
 		var server = client.stream ? client.stream.address() : "";
 		logger.debug("CACHE %s: setting key %s in server %j.", name, key, server);
-        client.set(key, JSON.stringify(value), function(error) {
-            var total = new Date() - start;
-            if (error) {
-            	jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:set", "cache:" + name, "server:"+server.address]);
-                callback(error);
-            } else {
-                if (typeof ttl != "function") {
-            		jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:set", "cache:" + name, "server:"+server.address]);
-                    client.expire(key, ttl, callback);
-                } else {
-           		jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:set", "cache:" + name, "server:"+server.address]);
-                    callback();
-                }
-            }
-        });
+		client.set(key, JSON.stringify(value), function(error) {
+			var total = new Date() - start;
+			var address = server && server.address;
+			if (error) {
+				jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:fail", "method:set", "cache:" + name, "server:" + address]);
+				callback(error);
+			} else {
+				if (typeof ttl != "function") {
+					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:set", "cache:" + name, "server:" + address]);
+					client.expire(key, ttl, callback);
+				} else {
+					jsdog.recordCompoundMetric("application.mobile.api.cache.time", total, ["result:success", "method:set", "cache:" + name, "server:" + address]);
+					callback();
+				}
+			}
+		});
 	};
 
 	self.quit = function() {
 		require("jsdog-meli").stop();
-        options.servers.forEach(function(server) {
+		options.servers.forEach(function(server) {
 			clients[server].end();
 		});
 	};
@@ -113,7 +116,9 @@ module.exports = function MeliCache(options) {
 	};
 
 	self.on("error", function(error) {
-		logger.warn({err: error && error.message}, "Error in Cache client!");
+		logger.warn({
+			err: error && error.message
+		}, "Error in Cache client!");
 	});
 	return self;
 };
