@@ -59,7 +59,7 @@ module.exports = function MeliCache(options) {
 		});
 	};
 
-	self.remove = function(key, callback) {
+	self.del = function(key, callback) {
 		var start = new Date();
 		var node = self.ring.get(key);
 		var client = clients[node];
@@ -76,6 +76,9 @@ module.exports = function MeliCache(options) {
 			}
 		});
 	};
+
+	//retrocompatibility
+	self.remove = self.del;
 
 	self.set = function(key, value, ttl, callback) {
 		var start = new Date();
