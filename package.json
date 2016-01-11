@@ -6,6 +6,10 @@
 		"check": "./node_modules/david/bin/david.js --registry http://registry.npm.ml.com/"
 	},
 	"author": "Pablo Lucadei",
+	"contributors": [
+		"Alejandro Larre",
+		"Martin Gonzalez"
+	],
 	"homepage": "https://github.com/pablonazareno/mobile-cache",
     	"repository": {
         	"type": "git",

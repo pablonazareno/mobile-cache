@@ -84,8 +84,7 @@ var MeliCache = module.exports = function MeliCache(options) {
 
 	self.on('error', function(error, server) {
 		debug('error: %j', error);
-		var client = clients[server];
-		client.reconnect();
+		clients[server] && clients[server].reconnect();
 	});
 
 	return self;
