@@ -63,7 +63,7 @@ var MeliCache = module.exports = function MeliCache(options) {
 
 	self.set = function(key, value, ttl, callback) {
 		var client = self.getClient(key);
-		client.set(key, JSON.stringify(value), ttl, handle_callback(client, callback));
+		client.set(key, value, ttl, handle_callback(client, callback));
 	};
 
 	//retrocompatibility
