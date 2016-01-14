@@ -71,7 +71,7 @@ var MeliCache = module.exports = function MeliCache(options) {
 
 	self.quit = function() {
 		options.servers.forEach(function(server) {
-			clients[server].end();
+            clients[server].quit();
 		});
 	};
 
