@@ -1,7 +1,7 @@
 # mobile-cache
 Distributed cached sharded over redis. According Mobile team requisites.
 
-##Features
+## Features
 * Bassed on redis
 * Data sharding support
 * CLS support
@@ -31,4 +31,4 @@ cache.quit();
 }
 ```
 ## Events
-See [node_redis](https://github.com/mranney/node_redis#connection-events) documentacion.
+See [node_redis](https://github.com/NodeRedis/node_redis#connection-and-other-events) documentacion.
